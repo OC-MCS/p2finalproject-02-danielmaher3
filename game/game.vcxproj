@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -149,7 +149,23 @@
     <ClCompile Include="game.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Readme.txt" />
+    <Image Include="Alien.png" />
+    <Image Include="Bomb.png" />
+    <Image Include="fighter.png" />
+    <Image Include="missile.png" />
+    <Image Include="MyMissile.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Alien.h" />
+    <ClInclude Include="Bomb.h" />
+    <ClInclude Include="Bombs.h" />
+    <ClInclude Include="Level.h" />
+    <ClInclude Include="Missile.h" />
+    <ClInclude Include="Missiles.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="Projectile.h" />
+    <ClInclude Include="Squadron.h" />
+    <ClInclude Include="UserInterface.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

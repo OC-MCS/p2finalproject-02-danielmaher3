@@ -1,59 +1,41 @@
-//=========================================================
-// This is just the starting point for your final project.
-// You are expected to modify and add classes/files as needed.
-// The code below is the original code for our first graphics
-// project (moving the little green ship). 
-//========================================================
+//============================================================
+// Daniel Maher
+// Professor Harbert
+// Project 8: Space Game
+// Due: 4-19-2019
+//============================================================
+#include "Player.h"
+#include "Alien.h"
+#include "Squadron.h"
+#include "Missile.h"
+#include "Bomb.h"
+#include "UserInterface.h"
+#include "Level.h"
 #include <iostream>
 using namespace std;
 #include <SFML/Graphics.hpp>
 using namespace sf; 
-
-//============================================================
-// YOUR HEADER WITH YOUR NAME GOES HERE. PLEASE DO NOT FORGET THIS
-//============================================================
-
-// note: a Sprite represents an image on screen. A sprite knows and remembers its own position
-// ship.move(offsetX, offsetY) adds offsetX, offsetY to 
-// the current position of the ship. 
-// x is horizontal, y is vertical. 
-// 0,0 is in the UPPER LEFT of the screen, y increases DOWN the screen
-void moveShip(Sprite& ship)
-{
-	const float DISTANCE = 5.0;
-
-	if (Keyboard::isKeyPressed(Keyboard::Left))
-	{
-		// left arrow is pressed: move our ship left 5 pixels
-		// 2nd parm is y direction. We don't want to move up/down, so it's zero.
-		ship.move(-DISTANCE, 0);
-	}
-	else if (Keyboard::isKeyPressed(Keyboard::Right))
-	{
-		// right arrow is pressed: move our ship right 5 pixels
-		ship.move(DISTANCE, 0);
-	}
-}
-
-
 
 int main()
 {
 	const int WINDOW_WIDTH = 800;
 	const int WINDOW_HEIGHT = 600;
 
+	Player player;				// INstance of Player
+	Alien alien;				// Instance of Alien
+	Squadron squad;				// Instance of Squadron
+	Missiles ied(&squad);		// Instance of Missiles
+	UI interact;				// User Interface object
+	Level level;				// Level object
+	bool game = false;			// Test for a button
+	bool secret = false;		// :)
+	int score = 0;				// Score of player
+	int count = 0;				// Timer variable, incremented for every iteration of the animation loop
+
 	RenderWindow window(VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "aliens!");
 	// Limit the framerate to 60 frames per second
 	window.setFramerateLimit(60);
 
-	// load textures from file into memory. This doesn't display anything yet.
-	// Notice we do this *before* going into animation loop.
-	Texture shipTexture;
-	if (!shipTexture.loadFromFile("ship.png"))
-	{
-		cout << "Unable to load ship texture!" << endl;
-		exit(EXIT_FAILURE);
-	}
 	Texture starsTexture;
 	if (!starsTexture.loadFromFile("stars.jpg"))
 	{
@@ -61,72 +43,96 @@ int main()
 		exit(EXIT_FAILURE);
 	}
 
-	// A sprite is a thing we can draw and manipulate on the screen.
-	// We have to give it a "texture" to specify what it looks like
-
 	Sprite background;
 	background.setTexture(starsTexture);
 	// The texture file is 640x480, so scale it up a little to cover 800x600 window
 	background.setScale(1.5, 1.5);
 
-	// create sprite and texture it
-	Sprite ship;
-	ship.setTexture(shipTexture);
-
-
-	// initial position of the ship will be approx middle of screen
-	float shipX = window.getSize().x / 2.0f;
-	float shipY = window.getSize().y / 2.0f;
-	ship.setPosition(shipX, shipY);
-
+	// first time through set the player in the middle of the screen
+	player.setShipPosition();
 
 	while (window.isOpen())
 	{
 		// check all the window's events that were triggered since the last iteration of the loop
 		// For now, we just need this so we can click on the window and close it
 		Event event;
+		score = 0;
 
 		while (window.pollEvent(event))
 		{
 			// "close requested" event: we close the window
 			if (event.type == Event::Closed)
-				window.close();
-			else if (event.type == Event::KeyPressed)
 			{
-				if (event.key.code == Keyboard::Space)
+				window.close();
+			}
+			else if (event.type == Event::MouseButtonReleased)
+			{
+				// maybe they just clicked on one of the settings "buttons"
+				// check for this and handle it.
+				Vector2f mousePos = window.mapPixelToCoords(Mouse::getPosition(window));
+				if (game == false)
 				{
-					// handle space bar
+					secret = interact.handleMouseUpForHiddenButton(mousePos);
+					game = interact.handleMouseUp(mousePos);
+
+					if (secret == true)
+					{
+						interact.displayEaserEgg(window);
+					}
 				}
-				
 			}
 		}
-
-		//===========================================================
-		// Everything from here to the end of the loop is where you put your
-		// code to produce ONE frame of the animation. The next iteration of the loop will
-		// render the next frame, and so on. All this happens ~ 60 times/second.
-		//===========================================================
-
+		
+		if (event.key.code == Keyboard::Space && count % 30 == 0)
+		{
+			player.fireMissile(ied);
+		}
+		
 		// draw background first, so everything that's drawn later 
 		// will appear on top of background
 		window.draw(background);
+		if (!game)
+		{
+			interact.displayMenu(window);
+		}
+		// Run game
+		else
+		{
+			player.display(window);
+			squad.displaySquadron(window);
+			player.moveX();
+			player.checkShipBounds();
+			squad.moveGroup();
+			ied.display(window);
+			if (count % 24 == 0)
+			{
+				squad.fire(player.getShipBounds());
+			}
+			score = ied.collision();
+			player.scoreCounter(score);
+			// bomb collision - can'tget it working
+			interact.displayLabels(window);
+			interact.displayLives(player.getLife(), window);
+			interact.displayScore(player, window);
+			interact.displayLevel(level.getLevel(), window);
 
-		moveShip(ship);
-
-		// draw the ship on top of background 
-		// (the ship from previous frame was erased when we drew background)
-		window.draw(ship);
-
+			// level things
+			// Not FUNCTIONAL
+			if (level.levelEnd())
+			{
+				if (level.checkVictory())
+				{
+					cout << "Victory" << endl;
+				}
+				level.incrementLevel();
+			}
+			level.checkDefeat(player, alien);
+		}
 
 		// end the current frame; this makes everything that we have 
 		// already "drawn" actually show up on the screen
+		count++;
 		window.display();
-
-		// At this point the frame we have built is now visible on screen.
-		// Now control will go back to the top of the animation loop
-		// to build the next frame. Since we begin by drawing the
-		// background, each frame is rebuilt from scratch.
-
 	} // end body of animation loop
 
 	return 0;
